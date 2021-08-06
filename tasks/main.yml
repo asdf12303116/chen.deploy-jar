@@ -1,0 +1,116 @@
+---
+- name: "Check for required inventory springboot_application_name variable"
+  fail:
+    msg: springboot_application_name variable is required and should be defined in you inventory
+  when: not springboot_application_name
+
+- name: "Check for kube_config variable"
+  fail:
+    msg: kube_config variable is required and should be defined in you inventory
+  when: not springboot_kube_config
+
+- name: "Check for required inventory springboot_src_file or springboot_src_url variable"
+  fail:
+    msg: springboot_src variable or springboot_src_url is required and should be defined in you inventory
+  when: (not springboot_src_file) and (not springboot_src_url)
+
+  
+- name: "Create group for springboot app"
+  group:
+    name: "{{ springboot_group }}"
+    state: present
+
+- name: "Create user for springboot app"
+  user:
+    name: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+    state: present
+- name: "Check last version exist"
+  stat:
+    path: "{{ sysd_user_services_folder }}/{{ springboot_last_version_name }}.service"
+  register: last_version
+- name: "Need Delete last version app"
+  service:
+    name: "{{ springboot_last_version_name }}"
+    enabled: false
+    daemon-reload: yes
+    state: stopped
+  when: springboot_delete_last_version and last_version.stat.exists
+
+
+- name: "Delete last version systemd service file"
+  file:
+    path: "{{ sysd_user_services_folder }}/{{ springboot_last_version_name }}.service"
+    state: absent
+  when: springboot_delete_last_version and last_version.stat.exists
+  notify:
+    - restart app
+
+- name: "Delete last version deploy folder"
+  file:
+    path: "{{ springboot_last_version_deploy_folder }}"
+    state: absent
+  when: springboot_delete_last_version and last_version.stat.exists
+
+- name: "Create deploy folder if not exists"
+  file:
+    path: "{{ springboot_deploy_folder }}"
+    state: directory
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+- name: "Create config folder if not exists"
+  file:
+    path: "/home/{{ springboot_user }}/.kube"
+    state: directory
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+- name: "Copy jar application"
+  copy:
+    src: "{{ springboot_src_file }}"
+    dest: "{{ springboot_deploy_folder }}/app.jar"
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+    mode: "u+x"
+  when: springboot_src_file != None
+  notify:
+    - restart app
+
+- name: "Deploy app properties"
+  template:
+    src: "{{ springboot_propertyfile_template }}"
+    dest: "{{ springboot_deploy_folder }}/application.yml"
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+  when: springboot_propertyfile_template != None
+  notify:
+    - restart app
+
+- name: "Deploy app config"
+  template:
+    src: "{{ springboot_configuration_template }}"
+    dest: "{{ springboot_deploy_folder }}"
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+  when: springboot_configuration_template != None
+  notify:
+    - restart app
+- name: "Deploy kube config"
+  copy:
+    src: "{{ springboot_kube_config }}"
+    dest: "/home/{{ springboot_user }}/.kube/config"
+    mode: 0600
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+  when: springboot_kube_config != None
+  notify:
+    - restart app
+
+- name: "Create systemd service file"
+  template:
+    src: app.service.j2
+    dest: "{{ sysd_script }}"
+    mode: 0644
+    owner: "{{ springboot_user }}"
+    group: "{{ springboot_group }}"
+  notify:
+    - restart app

@@ -1,0 +1,28 @@
+---
+# defaults 
+springboot_src_file: 
+springboot_src_url: 
+springboot_kube_config: 
+springboot_delete_last_version: false
+springboot_last_version_name:
+springboot_last_version_deploy_folder:
+
+
+# Mandatory variable : spring boot application name
+springboot_application_name: 
+
+# Optional : you can specify a template file to manage you app properties
+springboot_propertyfile_template: 
+
+# Optional : you can specify a template file to manage you app configuration
+# (see : https://docs.spring.io/spring-boot/docs/current/reference/html/deployment-install.html#deployment-script-customization-when-it-runs)
+springboot_configuration_template: 
+
+# Deploy folder
+springboot_deploy_folder: /opt/{{ springboot_application_name }}
+
+# linux user to start the service
+springboot_user: springboot
+
+# linux group to start the service
+springboot_group: springboot
