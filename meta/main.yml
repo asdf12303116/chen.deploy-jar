@@ -1,0 +1,29 @@
+galaxy_info:
+  author: chen
+  description: deploy jar as service via systemd
+  company: None
+
+  license: license (GPL-2.0-or-later, MIT, etc)
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: "Ubuntu"
+      versions:
+        - "xenial"
+        - "bionic"
+    - name: "Debian"
+      versions:
+        - "stretch"
+        - "buster"
+    - name: "EL"
+      versions:
+        - "7"
+        - "8"
+
+  galaxy_tags: []
+
+
+dependencies: []
+
+  
